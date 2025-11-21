@@ -20,14 +20,50 @@ from industrial_scraper import IndustrialFacebookScraper, create_industrial_scra
 def load_categories():
     """Load all categories from config file"""
     config_path = Path(__file__).parent / "config" / "categories.json"
-    if not config_path.exists():
-        print(f"❌ Config file not found: {config_path}")
+    
+    # Debug information
+    print(f"Looking for config file at: {config_path}")
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Script location: {Path(__file__).parent}")
+    print(f"Config path exists: {config_path.exists()}")
+    
+    # Check if config directory exists
+    config_dir = Path(__file__).parent / "config"
+    if not config_dir.exists():
+        print(f"❌ Config directory not found: {config_dir}")
+        print(f"Contents of {Path(__file__).parent}:")
+        try:
+            for item in Path(__file__).parent.iterdir():
+                print(f"  - {item.name} ({'dir' if item.is_dir() else 'file'})")
+        except Exception as e:
+            print(f"  Error listing directory: {e}")
         return []
     
-    with open(config_path, 'r', encoding='utf-8') as f:
-        categories_data = json.load(f)
+    if not config_path.exists():
+        print(f"❌ Config file not found: {config_path}")
+        print(f"Contents of config directory:")
+        try:
+            for item in config_dir.iterdir():
+                print(f"  - {item.name}")
+        except Exception as e:
+            print(f"  Error listing config directory: {e}")
+        return []
     
-    return list(categories_data.keys())
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            categories_data = json.load(f)
+        
+        if not categories_data:
+            print(f"⚠ Config file is empty: {config_path}")
+            return []
+        
+        return list(categories_data.keys())
+    except json.JSONDecodeError as e:
+        print(f"❌ Error parsing JSON from {config_path}: {e}")
+        return []
+    except Exception as e:
+        print(f"❌ Error reading config file {config_path}: {e}")
+        return []
 
 def main():
     """Run automated scraping for ALL categories (non-interactive)"""

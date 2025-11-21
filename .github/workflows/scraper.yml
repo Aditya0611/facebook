@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history to ensure all files are available
       
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -56,6 +58,47 @@ jobs:
       run: |
         playwright install chromium
         # Skip install-deps since we install system dependencies manually above
+        
+    - name: Verify config file exists
+      run: |
+        echo "=== Repository Information ==="
+        echo "Current branch: $(git branch --show-current)"
+        echo "Current commit: $(git rev-parse HEAD)"
+        echo "Working directory: $(pwd)"
+        echo ""
+        echo "=== Directory Structure ==="
+        ls -la
+        echo ""
+        echo "=== Config Directory ==="
+        if [ -d "config" ]; then
+          echo "Config directory exists"
+          ls -la config/
+        else
+          echo "❌ Config directory NOT FOUND"
+          echo "Creating config directory..."
+          mkdir -p config
+        fi
+        echo ""
+        echo "=== Checking for categories.json ==="
+        if [ -f "config/categories.json" ]; then
+          echo "✓ config/categories.json found"
+          echo "File size: $(wc -c < config/categories.json) bytes"
+          echo "File permissions: $(ls -l config/categories.json)"
+          echo "First few lines:"
+          head -5 config/categories.json
+        else
+          echo "❌ config/categories.json NOT FOUND"
+          echo ""
+          echo "Checking git for file:"
+          git ls-files | grep categories.json || echo "File not tracked in git"
+          echo ""
+          echo "All JSON files in repository:"
+          find . -name "*.json" -type f | head -20
+          echo ""
+          echo "All files in config directory:"
+          find config -type f 2>/dev/null || echo "Config directory is empty or doesn't exist"
+          exit 1
+        fi
         
     - name: Create .env file
       env:

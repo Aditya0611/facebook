@@ -23,6 +23,8 @@ logs/
 # Data (may contain scraped data)
 data/
 *.json
+# But allow config JSON files
+!config/*.json
 
 # Debug files
 debug/

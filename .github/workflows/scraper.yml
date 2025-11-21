@@ -24,10 +24,11 @@ jobs:
         
     - name: Install system dependencies
       run: |
+        echo "Installing system dependencies for Ubuntu 24.04..."
         sudo apt-get update
-        # Install libasound2t64 first to satisfy libasound2 virtual package requirement
+        echo "Step 1: Installing libasound2t64 (replaces libasound2 virtual package)..."
         sudo apt-get install -y libasound2t64
-        # Install all other dependencies (libasound2 virtual package will be satisfied by libasound2t64)
+        echo "Step 2: Installing all other dependencies..."
         sudo apt-get install -y \
           libnss3 \
           libnspr4 \
@@ -44,6 +45,7 @@ jobs:
           libgbm1 \
           libpango-1.0-0 \
           libcairo2
+        echo "All system dependencies installed successfully!"
           
     - name: Install Python dependencies
       run: |

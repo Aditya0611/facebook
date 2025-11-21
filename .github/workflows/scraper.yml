@@ -25,6 +25,9 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
+        # Install libasound2t64 first to satisfy libasound2 virtual package requirement
+        sudo apt-get install -y libasound2t64
+        # Install all other dependencies (libasound2 virtual package will be satisfied by libasound2t64)
         sudo apt-get install -y \
           libnss3 \
           libnspr4 \
@@ -39,7 +42,6 @@ jobs:
           libxfixes3 \
           libxrandr2 \
           libgbm1 \
-          libasound2t64 \
           libpango-1.0-0 \
           libcairo2
           

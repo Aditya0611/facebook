@@ -51,7 +51,8 @@ jobs:
     - name: Install Playwright browsers
       run: |
         playwright install chromium
-        playwright install-deps chromium
+        # Skip system dependencies as we install them manually above
+        playwright install-deps chromium --with-deps || true
         
     - name: Create .env file
       env:

@@ -515,7 +515,19 @@ class FacebookScraper(BaseScraper):
             bool: True if login successful
         """
         try:
+            # Validate credentials first
+            if not self.email or not self.password:
+                self.logger.error(
+                    "Login failed: Credentials not found",
+                    extra={'email_set': bool(self.email), 'password_set': bool(self.password)}
+                )
+                return False
+            
             self.logger.info("Starting Facebook login")
+            self.logger.debug(
+                "Login attempt",
+                extra={'email': self.email[:3] + '***' if self.email else 'None'}
+            )
             time.sleep(random.uniform(2, 4))
             
             # Navigate to Facebook
@@ -623,39 +635,73 @@ class FacebookScraper(BaseScraper):
                     )
                     return False
             
-            # Verify login success
-            if "login" not in current_url.lower():
-                self.logger.info("Facebook login successful")
-                time.sleep(3)
-                return True
-            else:
-                # Check for error messages on the page
-                error_message = ""
+            # Wait a bit more to ensure redirect completes
+            time.sleep(3)
+            current_url = self.page.url
+            
+            # Verify login success - check multiple indicators
+            if "login" not in current_url.lower() and "facebook.com" in current_url.lower():
+                # Additional check - verify we're not on login page by checking for feed
                 try:
-                    # Try to find common error messages
-                    error_selectors = [
-                        'div[role="alert"]',
-                        'div[class*="error"]',
-                        'div[id*="error"]',
-                        'div:has-text("incorrect")',
-                        'div:has-text("wrong")',
-                        'div:has-text("try again")'
+                    # Check if we can see news feed or home indicators
+                    feed_indicators = [
+                        '[aria-label*="News Feed"]',
+                        '[aria-label*="Home"]',
+                        'div[role="feed"]',
+                        'div[role="main"]',
+                        'a[href="/"]:has-text("Home")'
                     ]
-                    for selector in error_selectors:
+                    logged_in = False
+                    for indicator in feed_indicators:
                         try:
-                            error_elem = self.page.locator(selector).first
-                            if error_elem.is_visible(timeout=2000):
-                                error_message = error_elem.inner_text()[:200]
+                            if self.page.locator(indicator).first.is_visible(timeout=3000):
+                                logged_in = True
                                 break
                         except:
                             continue
+                    
+                    if logged_in or "facebook.com" in current_url and "login" not in current_url.lower():
+                        self.logger.info("Facebook login successful")
+                        time.sleep(3)
+                        return True
                 except:
-                    pass
-                
-                self.logger.error(
-                    "Login failed - redirected to login page",
-                    extra={'url': current_url, 'error_message': error_message}
-                )
+                    # Fallback - if URL doesn't have login, assume success
+                    if "login" not in current_url.lower():
+                        self.logger.info("Facebook login successful (verified by URL)")
+                        time.sleep(3)
+                        return True
+            
+            # Login failed - redirected to login page
+            error_message = ""
+            try:
+                # Wait a bit for error messages to appear
+                time.sleep(2)
+                # Try to find common error messages
+                error_selectors = [
+                    'div[role="alert"]',
+                    'div[class*="error"]',
+                    'div[id*="error"]',
+                    'div:has-text("incorrect")',
+                    'div:has-text("wrong")',
+                    'div:has-text("try again")',
+                    'div:has-text("Invalid")',
+                    '[data-testid="error"]'
+                ]
+                for selector in error_selectors:
+                    try:
+                        error_elem = self.page.locator(selector).first
+                        if error_elem.is_visible(timeout=3000):
+                            error_message = error_elem.inner_text()[:200]
+                            break
+                    except:
+                        continue
+            except:
+                pass
+            
+            self.logger.error(
+                "Login failed - redirected to login page",
+                extra={'url': current_url, 'error_message': error_message}
+            )
                 
                 # If not headless, allow manual intervention
                 if not self.headless:

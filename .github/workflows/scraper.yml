@@ -118,8 +118,27 @@ jobs:
         PROXIES=${PROXIES:-}
         EOF
         
+    - name: Verify credentials (debug)
+      run: |
+        echo "=== Credential Check ==="
+        if [ -n "$FACEBOOK_EMAIL" ]; then
+          echo "✓ FACEBOOK_EMAIL is set (length: ${#FACEBOOK_EMAIL} chars)"
+          echo "  Email starts with: ${FACEBOOK_EMAIL:0:3}***"
+        else
+          echo "❌ FACEBOOK_EMAIL is NOT set"
+        fi
+        if [ -n "$FACEBOOK_PASSWORD" ]; then
+          echo "✓ FACEBOOK_PASSWORD is set (length: ${#FACEBOOK_PASSWORD} chars)"
+        else
+          echo "❌ FACEBOOK_PASSWORD is NOT set"
+        fi
+        echo ""
+        
     - name: Run Facebook Scraper
       working-directory: ${{ github.workspace }}
+      env:
+        FACEBOOK_EMAIL: ${{ secrets.FACEBOOK_EMAIL }}
+        FACEBOOK_PASSWORD: ${{ secrets.FACEBOOK_PASSWORD }}
       run: |
         echo "Working directory: $(pwd)"
         echo "Verifying config file exists before running script..."

@@ -702,57 +702,55 @@ class FacebookScraper(BaseScraper):
                 "Login failed - redirected to login page",
                 extra={'url': current_url, 'error_message': error_message}
             )
+            
+            # If not headless, allow manual intervention
+            if not self.headless:
+                print("\n" + "="*80)
+                print("⚠️  LOGIN FAILED - Manual Intervention Required")
+                print("="*80)
+                print("\nFacebook redirected back to the login page.")
+                if error_message:
+                    print(f"\nError detected: {error_message}")
+                print("\nPossible reasons:")
+                print("  • Incorrect email or password")
+                print("  • Facebook security check required")
+                print("  • 2FA verification needed")
+                print("  • Account temporarily locked")
+                print("\nPlease check the browser window and:")
+                print("  1. Verify credentials are correct")
+                print("  2. Complete any security checks manually")
+                print("  3. If login succeeds, the script will continue automatically")
+                print("\nThe script will wait up to 3 minutes for manual login...")
+                print("="*80 + "\n")
                 
-                # If not headless, allow manual intervention
-                if not self.headless:
-                    print("\n" + "="*80)
-                    print("⚠️  LOGIN FAILED - Manual Intervention Required")
-                    print("="*80)
-                    print("\nFacebook redirected back to the login page.")
-                    if error_message:
-                        print(f"\nError detected: {error_message}")
-                    print("\nPossible reasons:")
-                    print("  • Incorrect email or password")
-                    print("  • Facebook security check required")
-                    print("  • 2FA verification needed")
-                    print("  • Account temporarily locked")
-                    print("\nPlease check the browser window and:")
-                    print("  1. Verify credentials are correct")
-                    print("  2. Complete any security checks manually")
-                    print("  3. If login succeeds, the script will continue automatically")
-                    print("\nThe script will wait up to 3 minutes for manual login...")
-                    print("="*80 + "\n")
-                    
-                    # Wait for manual login (check every 5 seconds)
-                    max_wait_time = 180  # 3 minutes
-                    wait_interval = 5
-                    elapsed = 0
-                    
-                    while elapsed < max_wait_time:
-                        time.sleep(wait_interval)
-                        elapsed += wait_interval
-                        
-                        # Check current URL
-                        try:
-                            current_url = self.page.url
-                            if "login" not in current_url.lower() and "checkpoint" not in current_url.lower():
-                                # Successfully logged in manually
-                                self.logger.info("Manual login successful")
-                                print("\n✓ Manual login detected! Continuing...\n")
-                                time.sleep(3)
-                                return True
-                        except:
-                            pass
-                        
-                        # Show progress every 30 seconds
-                        if elapsed % 30 == 0:
-                            remaining = (max_wait_time - elapsed) // 60
-                            print(f"⏳ Still waiting for manual login... ({remaining} minutes remaining)")
-                    
-                    # Timeout
-                    print("\n❌ Timeout: Manual login not completed within 3 minutes")
-                    return False
+                # Wait for manual login (check every 5 seconds)
+                max_wait_time = 180  # 3 minutes
+                wait_interval = 5
+                elapsed = 0
                 
+                while elapsed < max_wait_time:
+                    time.sleep(wait_interval)
+                    elapsed += wait_interval
+                    
+                    # Check current URL
+                    try:
+                        current_url = self.page.url
+                        if "login" not in current_url.lower() and "checkpoint" not in current_url.lower():
+                            # Successfully logged in manually
+                            self.logger.info("Manual login successful")
+                            print("\n✓ Manual login detected! Continuing...\n")
+                            time.sleep(3)
+                            return True
+                    except:
+                        pass
+                    
+                    # Show progress every 30 seconds
+                    if elapsed % 30 == 0:
+                        remaining = (max_wait_time - elapsed) // 60
+                        print(f"⏳ Still waiting for manual login... ({remaining} minutes remaining)")
+                
+                # Timeout
+                print("\n❌ Timeout: Manual login not completed within 3 minutes")
                 return False
             
         except Exception as e:

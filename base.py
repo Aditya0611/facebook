@@ -533,6 +533,14 @@ class FacebookScraper(BaseScraper):
             # Navigate to Facebook
             self.navigate_to("https://www.facebook.com")
             
+            # Wait for page to load completely
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=15000)
+            except:
+                pass  # Continue even if networkidle times out
+            
+            time.sleep(2)  # Additional wait for dynamic content
+            
             # Handle cookie consent
             try:
                 cookie_btn = self.page.locator(
@@ -544,8 +552,45 @@ class FacebookScraper(BaseScraper):
             except:
                 pass
             
-            # Fill email with human-like typing
-            email_field = self.page.locator('#email').first
+            # Debug: Log current page info
+            current_url = self.page.url
+            page_title = self.page.title()
+            self.logger.debug(
+                "Login page loaded",
+                extra={'url': current_url, 'title': page_title[:100]}
+            )
+            
+            # Try multiple selector strategies for email field
+            email_field = None
+            email_selectors = ['#email', 'input[type="email"]', 'input[name="email"]', 'input[placeholder*="email" i]', 'input[placeholder*="phone" i]']
+            
+            for selector in email_selectors:
+                try:
+                    locator = self.page.locator(selector).first
+                    if locator.is_visible(timeout=5000):
+                        email_field = locator
+                        self.logger.debug(f"Found email field with selector: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not email_field:
+                # Take screenshot for debugging
+                if self.debug:
+                    debug_dir = Path("debug")
+                    debug_dir.mkdir(exist_ok=True)
+                    screenshot_path = debug_dir / f"login_error_{int(time.time())}.png"
+                    self.page.screenshot(path=str(screenshot_path))
+                    self.logger.debug(f"Debug screenshot saved: {screenshot_path}")
+                
+                self.logger.error(
+                    "Login failed: Email field not found",
+                    extra={'url': current_url, 'title': page_title[:100]}
+                )
+                raise Exception(f"Email field not found on page. URL: {current_url}, Title: {page_title[:100]}")
+            
+            # Wait for email field to be clickable
+            email_field.wait_for(state="visible", timeout=10000)
             email_field.click()
             time.sleep(0.5)
             for char in self.email:
@@ -553,8 +598,25 @@ class FacebookScraper(BaseScraper):
             
             time.sleep(1)
             
-            # Fill password with human-like typing
-            pass_field = self.page.locator('#pass').first
+            # Fill password with human-like typing - try multiple selectors
+            pass_field = None
+            pass_selectors = ['#pass', 'input[type="password"]', 'input[name="pass"]']
+            
+            for selector in pass_selectors:
+                try:
+                    locator = self.page.locator(selector).first
+                    if locator.is_visible(timeout=5000):
+                        pass_field = locator
+                        self.logger.debug(f"Found password field with selector: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not pass_field:
+                self.logger.error("Login failed: Password field not found")
+                raise Exception("Password field not found on page")
+            
+            pass_field.wait_for(state="visible", timeout=10000)
             pass_field.click()
             time.sleep(0.5)
             for char in self.password:

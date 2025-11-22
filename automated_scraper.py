@@ -221,13 +221,13 @@ def main():
             # Display metrics
             metrics = scraper.get_metrics()
             print("Final Metrics:")
-            print(f"  Total Requests: {metrics.total_requests}")
-            print(f"  Successful: {metrics.successful_requests}")
-            print(f"  Failed: {metrics.failed_requests}")
-            print(f"  Success Rate: {metrics.success_rate:.2f}%")
-            print(f"  Total Posts Scraped: {metrics.total_posts_scraped}")
-            print(f"  Total Hashtags Found: {metrics.total_hashtags_found}")
-            print(f"  Avg Response Time: {metrics.avg_response_time:.2f}s")
+            print(f"  Total Requests: {metrics.get('total_requests', 0)}")
+            print(f"  Successful: {metrics.get('successful_requests', 0)}")
+            print(f"  Failed: {metrics.get('failed_requests', 0)}")
+            print(f"  Success Rate: {metrics.get('success_rate', 0.0):.2f}%")
+            print(f"  Total Posts Scraped: {metrics.get('total_posts_scraped', 0)}")
+            print(f"  Total Hashtags Found: {metrics.get('total_hashtags_found', 0)}")
+            print(f"  Avg Response Time: {metrics.get('avg_response_time', 0.0):.2f}s")
             print()
             
             return 0 if failed_categories == 0 else 1

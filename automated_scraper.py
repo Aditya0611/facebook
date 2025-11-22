@@ -19,36 +19,72 @@ from industrial_scraper import IndustrialFacebookScraper, create_industrial_scra
 
 def load_categories():
     """Load all categories from config file"""
-    config_path = Path(__file__).parent / "config" / "categories.json"
+    # Try multiple path resolution strategies
+    script_dir = Path(__file__).parent.absolute()
+    working_dir = Path.cwd()
+    
+    # List of potential config paths to try
+    potential_paths = [
+        script_dir / "config" / "categories.json",  # Relative to script
+        working_dir / "config" / "categories.json",  # Relative to working directory
+        Path("config") / "categories.json",  # Relative to current directory
+        script_dir.parent / "config" / "categories.json",  # One level up (in case script is in subdirectory)
+    ]
+    
+    config_path = None
     
     # Debug information
-    print(f"Looking for config file at: {config_path}")
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"Script location: {Path(__file__).parent}")
-    print(f"Config path exists: {config_path.exists()}")
+    print(f"Script directory: {script_dir}")
+    print(f"Working directory: {working_dir}")
+    print(f"Searching for config/categories.json...")
     
-    # Check if config directory exists
-    config_dir = Path(__file__).parent / "config"
-    if not config_dir.exists():
-        print(f"❌ Config directory not found: {config_dir}")
-        print(f"Contents of {Path(__file__).parent}:")
+    # Try each potential path
+    for path in potential_paths:
+        abs_path = path.absolute()
+        if abs_path.exists() and abs_path.is_file():
+            config_path = abs_path
+            print(f"✓ Found config file at: {config_path}")
+            break
+        else:
+            print(f"  - Not found: {abs_path}")
+    
+    # If not found, list directory contents to help debug
+    if not config_path:
+        print(f"\n❌ Config file not found in any expected location")
+        print(f"\nScript directory contents:")
         try:
-            for item in Path(__file__).parent.iterdir():
+            for item in sorted(script_dir.iterdir()):
                 print(f"  - {item.name} ({'dir' if item.is_dir() else 'file'})")
         except Exception as e:
             print(f"  Error listing directory: {e}")
-        return []
-    
-    if not config_path.exists():
-        print(f"❌ Config file not found: {config_path}")
-        print(f"Contents of config directory:")
+        
+        print(f"\nWorking directory contents:")
         try:
-            for item in config_dir.iterdir():
-                print(f"  - {item.name}")
+            for item in sorted(working_dir.iterdir()):
+                print(f"  - {item.name} ({'dir' if item.is_dir() else 'file'})")
         except Exception as e:
-            print(f"  Error listing config directory: {e}")
+            print(f"  Error listing directory: {e}")
+        
+        # Check if config directory exists anywhere
+        config_dirs = []
+        for base_dir in [script_dir, working_dir]:
+            config_dir = base_dir / "config"
+            if config_dir.exists():
+                config_dirs.append(config_dir)
+                print(f"\nFound config directory at: {config_dir}")
+                print(f"Contents of {config_dir}:")
+                try:
+                    for item in sorted(config_dir.iterdir()):
+                        print(f"  - {item.name} ({'dir' if item.is_dir() else 'file'})")
+                except Exception as e:
+                    print(f"  Error listing directory: {e}")
+        
+        if not config_dirs:
+            print(f"\n❌ Config directory not found anywhere")
+        
         return []
     
+    # config_path is already confirmed to exist, so proceed with reading it
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             categories_data = json.load(f)

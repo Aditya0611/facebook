@@ -117,7 +117,12 @@ jobs:
         EOF
         
     - name: Run Facebook Scraper
+      working-directory: ${{ github.workspace }}
       run: |
+        echo "Working directory: $(pwd)"
+        echo "Verifying config file exists before running script..."
+        ls -la config/categories.json || exit 1
+        echo "Running scraper..."
         python automated_scraper.py
         
     - name: Upload scraped data

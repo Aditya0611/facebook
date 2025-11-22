@@ -56,7 +56,9 @@ jobs:
         
     - name: Install Playwright browsers
       run: |
-        playwright install chromium
+        echo "Installing Playwright browsers..."
+        playwright install firefox chromium
+        echo "Browsers installed successfully"
         # Skip install-deps since we install system dependencies manually above
         
     - name: Verify config file exists
